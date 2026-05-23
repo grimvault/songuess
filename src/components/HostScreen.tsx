@@ -6,6 +6,7 @@ import { Lobby, Player } from '../types';
 import QRCode from 'react-qr-code';
 import { Users, Settings, Play, Check, X, SkipForward, Music, LogOut } from 'lucide-react';
 import { searchItunes } from '../lib/itunes';
+import confetti from 'canvas-confetti';
 import {
   Select,
   SelectContent,
@@ -18,9 +19,11 @@ export function HostScreen() {
   const { lobbyId, reset } = useGameStore();
   const [lobby, setLobby] = useState<Lobby | null>(null);
   const [players, setPlayers] = useState<Player[]>([]);
-  const [categories, setCategories] = useState('pop'); // temp state for host editing
+  const [categories, setCategories] = useState('all'); // temp state for host editing
   const [gameMode, setGameMode] = useState<any>('songName');
   const [rounds, setRounds] = useState(5);
+  const [numOptions, setNumOptions] = useState(4);
+  const [answerStyle, setAnswerStyle] = useState<any>('mcq');
   const [loadingAudio, setLoadingAudio] = useState(false);
   
   // Timer state
@@ -47,6 +50,35 @@ export function HostScreen() {
       unsubPlayers();
     };
   }, [lobbyId, reset]);
+
+  useEffect(() => {
+    if (lobby?.status === 'gameFinished') {
+      const duration = 3 * 1000;
+      const end = Date.now() + duration;
+
+      const frame = () => {
+        confetti({
+          particleCount: 5,
+          angle: 60,
+          spread: 55,
+          origin: { x: 0 },
+          colors: ['#a855f7', '#60a5fa', '#34d399']
+        });
+        confetti({
+          particleCount: 5,
+          angle: 120,
+          spread: 55,
+          origin: { x: 1 },
+          colors: ['#a855f7', '#60a5fa', '#34d399']
+        });
+
+        if (Date.now() < end) {
+          requestAnimationFrame(frame);
+        }
+      };
+      frame();
+    }
+  }, [lobby?.status]);
 
   // Round Timer Logic
   useEffect(() => {
@@ -83,7 +115,9 @@ export function HostScreen() {
       settings: {
         gameMode,
         rounds,
-        category: categories
+        category: categories,
+        numOptions,
+        answerStyle
       },
       currentRound: 0
     });
@@ -97,12 +131,22 @@ export function HostScreen() {
     const updates: any[] = [];
     players.forEach(p => {
       let pointsEarned = 0;
-      if (p.hasGuessed && p.lastGuess === lobby.correctAnswer) {
-        // Calculate points based on speed (max 1000)
-        // 30 seconds max
-        const guessTimeDiff = (p.lastGuessTime - lobby.roundStartTime) / 1000;
-        const speedRatio = Math.max(0, 1 - (guessTimeDiff / 30));
-        pointsEarned = Math.round(500 + (500 * speedRatio));
+      if (p.hasGuessed) {
+        let isCorrect = false;
+        if (lobby.settings.answerStyle === 'typing') {
+          // Case-insensitive check for typing mode
+          isCorrect = p.lastGuess.trim().toLowerCase() === lobby.correctAnswer.trim().toLowerCase();
+        } else {
+          isCorrect = p.lastGuess === lobby.correctAnswer;
+        }
+        
+        if (isCorrect) {
+          // Calculate points based on speed (max 1000)
+          // 30 seconds max
+          const guessTimeDiff = (p.lastGuessTime - lobby.roundStartTime) / 1000;
+          const speedRatio = Math.max(0, Math.min(1, 1 - (guessTimeDiff / 30)));
+          pointsEarned = Math.round(500 + (500 * speedRatio));
+        }
       }
       
       updates.push(updateDoc(doc(db, 'lobbies', lobbyId, 'players', (p as any).id), {
@@ -125,12 +169,12 @@ export function HostScreen() {
     setLoadingAudio(true);
     
     try {
-      const tracks = await searchItunes(lobby.settings.category);
-      if (tracks.length < 4) throw new Error("Not enough tracks found");
+      const tracks = await searchItunes(lobby.settings.category === 'all' ? 'top hits' : lobby.settings.category);
+      if (tracks.length < lobby.settings.numOptions) throw new Error("Not enough tracks found");
       
-      // Pick 4 random unique tracks
+      // Pick random unique tracks
       const shuffled = tracks.sort(() => 0.5 - Math.random());
-      const selected = shuffled.slice(0, 4);
+      const selected = shuffled.slice(0, lobby.settings.numOptions);
       
       // Pick 1 as answer
       const answerTrack = selected[Math.floor(Math.random() * selected.length)];
@@ -150,8 +194,7 @@ export function HostScreen() {
       // Reset players guesses
       const pUpdates = players.map(p => updateDoc(doc(db, 'lobbies', lobbyId, 'players', (p as any).id), {
         hasGuessed: false,
-        lastGuess: '',
-        lastPointsEarned: 0
+        lastGuess: ''
       }));
       await Promise.all(pUpdates);
 
@@ -227,6 +270,7 @@ export function HostScreen() {
                     <SelectValue placeholder="Select a category" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="all">All Genres</SelectItem>
                     <SelectItem value="pop">Pop Hits</SelectItem>
                     <SelectItem value="rock">Rock Classics</SelectItem>
                     <SelectItem value="hip-hop">Hip Hop</SelectItem>
@@ -251,6 +295,39 @@ export function HostScreen() {
                       {r}
                     </button>
                   ))}
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <label className="text-sm font-medium text-zinc-400">Number of Options</label>
+                <div className="flex gap-2">
+                  {[2, 4, 6, 8].map(r => (
+                    <button 
+                      key={r}
+                      onClick={() => setNumOptions(r)}
+                      className={`flex-1 py-3 rounded-xl border font-medium ${numOptions === r ? 'bg-purple-500 border-purple-500 text-white' : 'bg-zinc-950 border-zinc-800 text-zinc-400 hover:border-zinc-600'}`}
+                    >
+                      {r}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-3 md:col-span-2">
+                <label className="text-sm font-medium text-zinc-400">Answer Style</label>
+                <div className="flex gap-2">
+                  <button 
+                    onClick={() => setAnswerStyle('mcq')}
+                    className={`flex-1 py-3 rounded-xl border font-medium ${answerStyle === 'mcq' ? 'bg-purple-500 border-purple-500 text-white' : 'bg-zinc-950 border-zinc-800 text-zinc-400 hover:border-zinc-600'}`}
+                  >
+                    Multiple Choice
+                  </button>
+                  <button 
+                    onClick={() => setAnswerStyle('typing')}
+                    className={`flex-1 py-3 rounded-xl border font-medium ${answerStyle === 'typing' ? 'bg-purple-500 border-purple-500 text-white' : 'bg-zinc-950 border-zinc-800 text-zinc-400 hover:border-zinc-600'}`}
+                  >
+                    Typing (Free Input)
+                  </button>
                 </div>
               </div>
             </div>
@@ -286,7 +363,7 @@ export function HostScreen() {
               )}
               {players.map(p => (
                 <div key={(p as any).id} className="bg-zinc-950 rounded-2xl p-4 flex flex-col items-center gap-3 border border-zinc-800">
-                  <img src={p.avatar} alt={p.name} className="w-20 h-20 rounded-full bg-zinc-900" />
+                  <img src={p.avatar} alt={p.name} className="w-20 h-20 rounded-2xl bg-zinc-900" />
                   <span className="font-semibold truncate w-full text-center">{p.name}</span>
                 </div>
               ))}
@@ -332,18 +409,24 @@ export function HostScreen() {
             </div>
           )}
           
-          <div className="grid grid-cols-2 gap-4 max-w-4xl w-full">
-            {lobby.currentAnswers.map((ans, i) => (
-              <div key={i} className="bg-zinc-900 border-2 border-zinc-800 text-3xl font-semibold py-8 px-6 rounded-3xl text-center shadow-lg">
-                ??
+          <div className={`grid ${lobby.settings.numOptions > 4 ? 'grid-cols-2 md:grid-cols-4' : 'grid-cols-2'} gap-4 max-w-5xl w-full`}>
+            {lobby.settings.answerStyle === 'typing' ? (
+              <div className="col-span-full bg-zinc-900 border-2 border-zinc-800 text-3xl font-semibold py-12 px-6 rounded-3xl text-center shadow-lg text-zinc-500">
+                Players are typing...
               </div>
-            ))}
+            ) : (
+              lobby.currentAnswers.map((ans, i) => (
+                <div key={i} className="bg-zinc-900 border-2 border-zinc-800 text-2xl font-semibold py-8 px-6 rounded-3xl text-center shadow-lg flex items-center justify-center">
+                  ??
+                </div>
+              ))
+            )}
           </div>
 
           <div className="flex flex-wrap justify-center gap-4 mt-8">
              {players.map(p => (
-               <div key={(p as any).id} className={`w-16 h-16 rounded-full border-4 transition-colors ${p.hasGuessed ? 'border-green-500 opacity-100' : 'border-zinc-800 opacity-50'}`}>
-                 <img src={p.avatar} alt={p.name} className="rounded-full w-full h-full object-cover" />
+               <div key={(p as any).id} className={`w-16 h-16 rounded-2xl border-4 transition-colors ${p.hasGuessed ? 'border-green-500 opacity-100' : 'border-zinc-800 opacity-50'}`}>
+                 <img src={p.avatar} alt={p.name} className="rounded-2xl w-full h-full object-cover" />
                </div>
              ))}
           </div>
@@ -386,7 +469,7 @@ export function HostScreen() {
           {sorted.map((p, i) => (
             <div key={(p as any).id} className="bg-zinc-900 border border-zinc-800 rounded-2xl flex items-center p-4 px-6 gap-6 shadow-xl transition-opacity duration-300">
               <div className="text-4xl font-bold text-zinc-600 w-12">{i + 1}</div>
-              <img src={p.avatar} alt={p.name} className="w-20 h-20 rounded-full bg-zinc-950" />
+              <img src={p.avatar} alt={p.name} className="w-20 h-20 rounded-2xl bg-zinc-950" />
               <div className="flex-1">
                 <div className="text-2xl font-bold">{p.name}</div>
                 {p.lastPointsEarned > 0 ? (

@@ -9,7 +9,7 @@ export function Home() {
   const { setRole, setLobbyId, setPlayerInfo, lobbyId: storeLobbyId } = useGameStore();
   
   const [joinCode, setJoinCode] = useState(storeLobbyId || '');
-  const [playerName, setPlayerName] = useState('');
+  const [playerName, setPlayerName] = useState(() => localStorage.getItem('playerName') || '');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -56,6 +56,7 @@ export function Home() {
       }
       
       const newPlayerId = auth.currentUser.uid;
+      localStorage.setItem('playerName', playerName);
       
       await setDoc(doc(db, 'lobbies', lobbyCode, 'players', newPlayerId), {
         name: playerName,
