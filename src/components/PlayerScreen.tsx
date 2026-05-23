@@ -100,12 +100,12 @@ export function PlayerScreen() {
                 <p className="text-zinc-400">Waiting for others...</p>
               </div>
             ) : (
-              <div className="flex-1 flex flex-col gap-3">
+              <div className="flex-1 flex flex-col gap-4">
                 {lobby.currentAnswers.map((ans, i) => (
                   <button
                     key={i}
                     onClick={() => handleGuess(ans)}
-                    className="flex-1 bg-zinc-900 active:bg-zinc-800 border-2 border-zinc-800 rounded-2xl p-6 text-xl font-bold text-center transition-transform active:scale-[0.98] focus:outline-none flex items-center justify-center shadow-lg"
+                    className="flex-1 bg-zinc-900 border border-zinc-800 rounded-3xl p-6 text-xl font-bold text-center transition-all hover:bg-zinc-800 focus:ring-4 focus:ring-purple-500/20 active:scale-[0.98] focus:outline-none flex items-center justify-center shadow-lg"
                   >
                     {ans}
                   </button>

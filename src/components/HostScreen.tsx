@@ -6,6 +6,13 @@ import { Lobby, Player } from '../types';
 import QRCode from 'react-qr-code';
 import { Users, Settings, Play, Check, X, SkipForward, Music } from 'lucide-react';
 import { searchItunes } from '../lib/itunes';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./ui/Select";
 
 export function HostScreen() {
   const { lobbyId, reset } = useGameStore();
@@ -172,8 +179,16 @@ export function HostScreen() {
             <p className="text-2xl text-zinc-400">Scan the QR code or go to <span className="text-white font-mono">{window.location.host}</span> to join.</p>
           </div>
           
-          <div className="bg-white p-6 rounded-3xl inline-block mx-auto lg:mx-0">
-            <QRCode value={joinUrl} size={256} className="w-64 h-64" />
+          <div className="relative group inline-block mx-auto lg:mx-0">
+            <div className="absolute inset-0 bg-purple-500/20 blur-3xl -z-10 rounded-full opacity-50 group-hover:opacity-100 transition-opacity duration-1000" />
+            <div className="bg-zinc-900 border border-zinc-800 p-8 rounded-[2rem] flex flex-col items-center gap-6 shadow-2xl">
+              <div className="bg-white p-3 rounded-2xl">
+                <QRCode value={joinUrl} size={200} bgColor="#ffffff" fgColor="#09090b" style={{ borderRadius: '8px' }} />
+              </div>
+              <div className="font-mono text-zinc-300 bg-zinc-950 px-8 py-3 rounded-full border border-zinc-800 tracking-[0.3em] text-2xl font-bold">
+                {lobbyId}
+              </div>
+            </div>
           </div>
           
           <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 space-y-6">
@@ -182,40 +197,42 @@ export function HostScreen() {
               <h2 className="text-2xl font-semibold">Game Settings</h2>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-sm text-zinc-400">Game Mode</label>
-                <select 
-                  value={gameMode} 
-                  onChange={e => setGameMode(e.target.value)}
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white focus:outline-none focus:border-purple-500"
-                >
-                  <option value="songName">Guess Song Name (Audio)</option>
-                  <option value="coverImage">Guess Song Name (By Cover)</option>
-                  <option value="author">Guess Artist (Audio)</option>
-                </select>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-3">
+                <label className="text-sm font-medium text-zinc-400">Game Mode</label>
+                <Select value={gameMode} onValueChange={setGameMode}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a mode" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="songName">Guess Song Name (Audio)</SelectItem>
+                    <SelectItem value="coverImage">Guess Song Name (By Cover)</SelectItem>
+                    <SelectItem value="author">Guess Artist (Audio)</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               
-              <div className="space-y-2">
-                <label className="text-sm text-zinc-400">Category / Playlist</label>
-                <select 
-                  value={categories} 
-                  onChange={e => setCategories(e.target.value)}
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white focus:outline-none focus:border-purple-500"
-                >
-                  <option value="pop">Pop Hits</option>
-                  <option value="rock">Rock Classics</option>
-                  <option value="hip-hop">Hip Hop</option>
-                  <option value="electronic">Electronic / Dance</option>
-                  <option value="k-pop">K-Pop</option>
-                  <option value="country">Country</option>
-                  <option value="2010s">2010s Throwbacks</option>
-                  <option value="2000s">2000s Nostalgia</option>
-                </select>
+              <div className="space-y-3">
+                <label className="text-sm font-medium text-zinc-400">Category / Playlist</label>
+                <Select value={categories} onValueChange={setCategories}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="pop">Pop Hits</SelectItem>
+                    <SelectItem value="rock">Rock Classics</SelectItem>
+                    <SelectItem value="hip-hop">Hip Hop</SelectItem>
+                    <SelectItem value="electronic">Electronic / Dance</SelectItem>
+                    <SelectItem value="k-pop">K-Pop</SelectItem>
+                    <SelectItem value="country">Country</SelectItem>
+                    <SelectItem value="2010s">2010s Throwbacks</SelectItem>
+                    <SelectItem value="2000s">2000s Nostalgia</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-sm text-zinc-400">Total Rounds</label>
+              <div className="space-y-3">
+                <label className="text-sm font-medium text-zinc-400">Total Rounds</label>
                 <div className="flex gap-2">
                   {[5, 10, 15, 20].map(r => (
                     <button 
