@@ -103,11 +103,11 @@ export function Home() {
             <div className="space-y-4">
               <input
                 type="text"
-                placeholder="Lobby Code (e.g. ABCD)"
+                placeholder="Lobby Code (e.g. ABCD1234)"
                 value={joinCode}
                 onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
                 className="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-5 py-4 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 uppercase placeholder:normal-case font-mono text-lg transition-all"
-                maxLength={4}
+                maxLength={8}
                 required
               />
               <input

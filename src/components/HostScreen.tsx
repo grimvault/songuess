@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useGameStore } from '../stores/useGameStore';
-import { doc, onSnapshot, updateDoc, collection } from 'firebase/firestore';
+import { doc, onSnapshot, updateDoc, collection, deleteDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { Lobby, Player } from '../types';
 import QRCode from 'react-qr-code';
-import { Users, Settings, Play, Check, X, SkipForward, Music } from 'lucide-react';
+import { Users, Settings, Play, Check, X, SkipForward, Music, LogOut } from 'lucide-react';
 import { searchItunes } from '../lib/itunes';
 import {
   Select,
@@ -67,6 +67,15 @@ export function HostScreen() {
       return () => clearInterval(interval);
     }
   }, [lobby?.status, lobby?.roundStartTime]);
+
+  const handleLeaveLobby = async () => {
+    if (window.confirm("Are you sure you want to close this lobby? All players will be kicked.")) {
+      if (lobbyId) {
+        await deleteDoc(doc(db, 'lobbies', lobbyId));
+      }
+      reset();
+    }
+  };
 
   const startGame = async () => {
     if (!lobbyId) return;
@@ -172,7 +181,10 @@ export function HostScreen() {
 
   if (lobby.status === 'waiting' || lobby.status === 'starting') {
     return (
-      <div className="min-h-screen bg-zinc-950 text-white p-8 font-sans flex text-center lg:text-left flex-col lg:flex-row gap-12">
+      <div className="min-h-screen bg-zinc-950 text-white p-8 font-sans flex text-center lg:text-left flex-col lg:flex-row gap-12 relative overflow-hidden">
+        <button onClick={handleLeaveLobby} className="absolute top-6 right-6 flex items-center gap-2 bg-red-500/10 text-red-500 hover:bg-red-500/20 px-4 py-3 rounded-xl transition-all font-bold group z-50">
+          <LogOut className="w-5 h-5 group-hover:-translate-x-1 transition-transform" /> <span className="hidden sm:inline">Close Lobby</span>
+        </button>
         <div className="flex-1 space-y-8 flex flex-col justify-center max-w-xl mx-auto lg:mx-0">
           <div className="space-y-4">
             <h1 className="text-6xl font-bold tracking-tighter">Join the Party!</h1>
@@ -295,8 +307,13 @@ export function HostScreen() {
       <div className="min-h-screen bg-zinc-950 text-white flex flex-col">
         <div className="flex items-center justify-between p-6">
           <h2 className="text-3xl font-bold">Round {lobby.currentRound} / {lobby.settings.rounds}</h2>
-          <div className="text-6xl font-mono tracking-tighter">
-            00:{Math.ceil(timeLeft).toString().padStart(2, '0')}
+          <div className="flex items-center gap-6">
+            <div className="text-6xl font-mono tracking-tighter">
+              00:{Math.ceil(timeLeft).toString().padStart(2, '0')}
+            </div>
+            <button onClick={handleLeaveLobby} className="flex items-center gap-2 bg-red-500/10 text-red-500 hover:bg-red-500/20 p-4 rounded-2xl transition-all font-bold group z-50">
+              <LogOut className="w-7 h-7 group-hover:-translate-x-1 transition-transform" />
+            </button>
           </div>
         </div>
         
@@ -343,9 +360,12 @@ export function HostScreen() {
     const sorted = [...players].sort((a, b) => b.score - a.score);
 
     return (
-      <div className="min-h-screen bg-zinc-950 text-white p-12 flex flex-col items-center">
+      <div className="min-h-screen bg-zinc-950 text-white p-12 flex flex-col items-center relative overflow-hidden">
+        <button onClick={handleLeaveLobby} className="absolute top-6 right-6 flex items-center gap-2 bg-red-500/10 text-red-500 hover:bg-red-500/20 px-4 py-3 rounded-xl transition-all font-bold group z-50">
+          <LogOut className="w-5 h-5 group-hover:-translate-x-1 transition-transform" /> <span className="hidden sm:inline">Close Lobby</span>
+        </button>
         
-        <div className="text-center space-y-6 mb-12">
+        <div className="text-center space-y-6 mb-12 mt-8">
           <h2 className="text-5xl font-bold tracking-tight">
             {lobby.status === 'gameFinished' ? 'Final Standings!' : 'Round Over'}
           </h2>
