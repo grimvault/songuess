@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useGameStore } from '../stores/useGameStore';
 import { doc, onSnapshot, updateDoc, collection, deleteDoc } from 'firebase/firestore';
 import { db } from '../firebase';
@@ -6,6 +6,7 @@ import { Lobby, Player } from '../types';
 import QRCode from 'react-qr-code';
 import { Users, Settings, Play, Check, X, SkipForward, Music, LogOut } from 'lucide-react';
 import { searchItunes } from '../lib/itunes';
+import confetti from 'canvas-confetti';
 import {
   Select,
   SelectContent,
@@ -20,8 +21,12 @@ export function HostScreen() {
   const [players, setPlayers] = useState<Player[]>([]);
   const [categories, setCategories] = useState('pop'); // temp state for host editing
   const [gameMode, setGameMode] = useState<any>('songName');
+  const [inputMode, setInputMode] = useState<any>('choices');
+  const [optionsCount, setOptionsCount] = useState(4);
   const [rounds, setRounds] = useState(5);
   const [loadingAudio, setLoadingAudio] = useState(false);
+  
+  const isFinishing = useRef(false);
   
   // Timer state
   const [timeLeft, setTimeLeft] = useState(0);
@@ -50,6 +55,8 @@ export function HostScreen() {
 
   // Round Timer Logic
   useEffect(() => {
+    isFinishing.current = false;
+    
     if (lobby?.status === 'playing') {
       const updateTimer = () => {
         const elapsed = (Date.now() - lobby.roundStartTime) / 1000;
@@ -58,7 +65,10 @@ export function HostScreen() {
         
         if (remaining <= 0) {
           // Time is up, finish round automatically
-          finishRound();
+          if (!isFinishing.current) {
+            isFinishing.current = true;
+            finishRound();
+          }
         }
       };
       
@@ -82,6 +92,8 @@ export function HostScreen() {
       status: 'starting',
       settings: {
         gameMode,
+        inputMode,
+        optionsCount,
         rounds,
         category: categories
       },
@@ -97,7 +109,9 @@ export function HostScreen() {
     const updates: any[] = [];
     players.forEach(p => {
       let pointsEarned = 0;
-      if (p.hasGuessed && p.lastGuess === lobby.correctAnswer) {
+      const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+      
+      if (p.hasGuessed && normalize(p.lastGuess) === normalize(lobby.correctAnswer)) {
         // Calculate points based on speed (max 1000)
         // 30 seconds max
         const guessTimeDiff = (p.lastGuessTime - lobby.roundStartTime) / 1000;
@@ -114,6 +128,39 @@ export function HostScreen() {
     await Promise.all(updates);
 
     const isGameOver = lobby.currentRound >= lobby.settings.rounds;
+    
+    if (isGameOver) {
+      const end = Date.now() + 3 * 1000;
+      const colors = ['#a855f7', '#ec4899', '#3b82f6'];
+      
+      (function frame() {
+        confetti({
+          particleCount: 5,
+          angle: 60,
+          spread: 55,
+          origin: { x: 0 },
+          colors: colors
+        });
+        confetti({
+          particleCount: 5,
+          angle: 120,
+          spread: 55,
+          origin: { x: 1 },
+          colors: colors
+        });
+      
+        if (Date.now() < end) {
+          requestAnimationFrame(frame);
+        }
+      }());
+    } else {
+      confetti({
+        particleCount: 150,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ['#a855f7', '#3b82f6'] // purple and blue
+      });
+    }
 
     await updateDoc(doc(db, 'lobbies', lobbyId), {
       status: isGameOver ? 'gameFinished' : 'roundFinished',
@@ -126,17 +173,17 @@ export function HostScreen() {
     
     try {
       const tracks = await searchItunes(lobby.settings.category);
-      if (tracks.length < 4) throw new Error("Not enough tracks found");
+      if (tracks.length < lobby.settings.optionsCount) throw new Error("Not enough tracks found");
       
-      // Pick 4 random unique tracks
+      // Pick random unique tracks
       const shuffled = tracks.sort(() => 0.5 - Math.random());
-      const selected = shuffled.slice(0, 4);
+      const selected = shuffled.slice(0, lobby.settings.optionsCount);
       
       // Pick 1 as answer
       const answerTrack = selected[Math.floor(Math.random() * selected.length)];
       
       // Map to answers based on game mode
-      let targetAnswers = [];
+      let targetAnswers: string[] = [];
       let correctAnswer = "";
       
       if (lobby.settings.gameMode === 'author') {
@@ -150,8 +197,7 @@ export function HostScreen() {
       // Reset players guesses
       const pUpdates = players.map(p => updateDoc(doc(db, 'lobbies', lobbyId, 'players', (p as any).id), {
         hasGuessed: false,
-        lastGuess: '',
-        lastPointsEarned: 0
+        lastGuess: ''
       }));
       await Promise.all(pUpdates);
 
@@ -227,6 +273,7 @@ export function HostScreen() {
                     <SelectValue placeholder="Select a category" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="all">All Songs</SelectItem>
                     <SelectItem value="pop">Pop Hits</SelectItem>
                     <SelectItem value="rock">Rock Classics</SelectItem>
                     <SelectItem value="hip-hop">Hip Hop</SelectItem>
@@ -249,6 +296,37 @@ export function HostScreen() {
                       className={`flex-1 py-3 rounded-xl border font-medium ${rounds === r ? 'bg-purple-500 border-purple-500 text-white' : 'bg-zinc-950 border-zinc-800 text-zinc-400 hover:border-zinc-600'}`}
                     >
                       {r}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <label className="text-sm font-medium text-zinc-400">Input Mode</label>
+                <div className="flex gap-2">
+                  {(['choices', 'typing'] as const).map(m => (
+                    <button 
+                      key={m}
+                      onClick={() => setInputMode(m)}
+                      className={`flex-1 py-3 rounded-xl border font-medium capitalize ${inputMode === m ? 'bg-purple-500 border-purple-500 text-white' : 'bg-zinc-950 border-zinc-800 text-zinc-400 hover:border-zinc-600'}`}
+                    >
+                      {m}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <label className="text-sm font-medium text-zinc-400">Options Count (for choices mode)</label>
+                <div className="flex gap-2">
+                  {[2, 4, 6, 8].map(o => (
+                    <button 
+                      key={o}
+                      disabled={inputMode === 'typing'}
+                      onClick={() => setOptionsCount(o)}
+                      className={`flex-1 py-3 rounded-xl border font-medium disabled:opacity-30 ${optionsCount === o ? 'bg-purple-500 border-purple-500 text-white' : 'bg-zinc-950 border-zinc-800 text-zinc-400 hover:border-zinc-600'}`}
+                    >
+                      {o}
                     </button>
                   ))}
                 </div>
@@ -285,8 +363,8 @@ export function HostScreen() {
                 </div>
               )}
               {players.map(p => (
-                <div key={(p as any).id} className="bg-zinc-950 rounded-2xl p-4 flex flex-col items-center gap-3 border border-zinc-800">
-                  <img src={p.avatar} alt={p.name} className="w-20 h-20 rounded-full bg-zinc-900" />
+                <div key={(p as any).id} className="bg-zinc-950 rounded-[1.5rem] p-4 flex flex-col items-center gap-3 border border-zinc-800">
+                  <img src={p.avatar} alt={p.name} className="w-20 h-20 rounded-[1.25rem] bg-zinc-900" />
                   <span className="font-semibold truncate w-full text-center">{p.name}</span>
                 </div>
               ))}
@@ -341,11 +419,11 @@ export function HostScreen() {
           </div>
 
           <div className="flex flex-wrap justify-center gap-4 mt-8">
-             {players.map(p => (
-               <div key={(p as any).id} className={`w-16 h-16 rounded-full border-4 transition-colors ${p.hasGuessed ? 'border-green-500 opacity-100' : 'border-zinc-800 opacity-50'}`}>
-                 <img src={p.avatar} alt={p.name} className="rounded-full w-full h-full object-cover" />
-               </div>
-             ))}
+              {players.map(p => (
+                <div key={(p as any).id} className={`w-16 h-16 rounded-[1.5rem] border-4 transition-colors ${p.hasGuessed ? 'border-green-500 opacity-100 bg-green-500/10' : 'border-zinc-800 opacity-50 bg-zinc-900'}`}>
+                  <img src={p.avatar} alt={p.name} className="w-full h-full object-cover p-0.5 rounded-[1.25rem]" />
+                </div>
+              ))}
           </div>
         </div>
 
@@ -386,7 +464,7 @@ export function HostScreen() {
           {sorted.map((p, i) => (
             <div key={(p as any).id} className="bg-zinc-900 border border-zinc-800 rounded-2xl flex items-center p-4 px-6 gap-6 shadow-xl transition-opacity duration-300">
               <div className="text-4xl font-bold text-zinc-600 w-12">{i + 1}</div>
-              <img src={p.avatar} alt={p.name} className="w-20 h-20 rounded-full bg-zinc-950" />
+              <img src={p.avatar} alt={p.name} className="w-20 h-20 rounded-[1.75rem] border-2 border-zinc-700 bg-zinc-950 p-1" />
               <div className="flex-1">
                 <div className="text-2xl font-bold">{p.name}</div>
                 {p.lastPointsEarned > 0 ? (

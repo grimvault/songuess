@@ -15,5 +15,5 @@ export function generateLobbyId() {
 }
 
 export function generateAvatarUrl(seed: string) {
-  return `https://api.dicebear.com/7.x/thumbs/svg?seed=${encodeURIComponent(seed)}&backgroundColor=0a0a0a,1a1a1a&shapeColor=f8fafc`;
+  return `https://api.dicebear.com/7.x/thumbs/svg?seed=${encodeURIComponent(seed)}&radius=30`;
 }

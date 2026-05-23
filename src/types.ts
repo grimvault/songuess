@@ -1,4 +1,5 @@
 export type GameMode = 'songName' | 'coverImage' | 'author';
+export type InputMode = 'choices' | 'typing';
 
 export interface Track {
   id: number;
@@ -14,6 +15,8 @@ export interface Lobby {
   status: 'waiting' | 'starting' | 'playing' | 'roundFinished' | 'gameFinished';
   settings: {
     gameMode: GameMode;
+    inputMode: InputMode;
+    optionsCount: number;
     rounds: number;
     category: string;
   };

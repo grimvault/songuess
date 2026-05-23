@@ -9,7 +9,7 @@ export function Home() {
   const { setRole, setLobbyId, setPlayerInfo, lobbyId: storeLobbyId } = useGameStore();
   
   const [joinCode, setJoinCode] = useState(storeLobbyId || '');
-  const [playerName, setPlayerName] = useState('');
+  const [playerName, setPlayerName] = useState(() => localStorage.getItem('songuess_playerName') || '');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -24,6 +24,8 @@ export function Home() {
         currentRound: 0,
         settings: {
           gameMode: 'songName',
+          inputMode: 'choices',
+          optionsCount: 4,
           rounds: 5,
           category: 'pop' // Default category
         }
@@ -43,6 +45,9 @@ export function Home() {
     if (!auth.currentUser || !joinCode || !playerName) return;
     
     setLoading(true);
+    setError('');
+    const lobbyCode = joinCode.toUpperCase().trim();
+    localStorage.setItem('songuess_playerName', playerName);
     setError('');
     
     try {

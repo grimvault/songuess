@@ -15,7 +15,7 @@ service cloud.firestore {
       allow create: if isSignedIn() 
         && request.resource.data.hostId == request.auth.uid;
         
-      allow update: if isSignedIn() 
+      allow update, delete: if isSignedIn() 
         && resource.data.hostId == request.auth.uid;
         
       match /players/{playerId} {
