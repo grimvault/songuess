@@ -177,18 +177,15 @@ export function HostScreen() {
 
   if (!lobby) return <div className="min-h-screen bg-zinc-950 text-white flex items-center justify-center">Loading lobby...</div>;
 
-  const joinUrl = `${window.location.origin}/?lobby=${lobbyId}`;
+  const joinUrl = `${window.location.origin}${window.location.pathname}?lobby=${lobbyId}`;
 
   if (lobby.status === 'waiting' || lobby.status === 'starting') {
     return (
       <div className="min-h-screen bg-zinc-950 text-white p-8 font-sans flex text-center lg:text-left flex-col lg:flex-row gap-12 relative overflow-hidden">
-        <button onClick={handleLeaveLobby} className="absolute top-6 right-6 flex items-center gap-2 bg-red-500/10 text-red-500 hover:bg-red-500/20 px-4 py-3 rounded-xl transition-all font-bold group z-50">
-          <LogOut className="w-5 h-5 group-hover:-translate-x-1 transition-transform" /> <span className="hidden sm:inline">Close Lobby</span>
-        </button>
         <div className="flex-1 space-y-8 flex flex-col justify-center max-w-xl mx-auto lg:mx-0">
           <div className="space-y-4">
             <h1 className="text-6xl font-bold tracking-tighter">Join the Party!</h1>
-            <p className="text-2xl text-zinc-400">Scan the QR code or go to <span className="text-white font-mono">{window.location.host}</span> to join.</p>
+            <p className="text-2xl text-zinc-400">Scan the QR code or go to <span className="text-white font-mono">{window.location.host}{window.location.pathname === '/' ? '' : window.location.pathname}</span> to join.</p>
           </div>
           
           <div className="relative group inline-block mx-auto lg:mx-0">
@@ -272,9 +269,14 @@ export function HostScreen() {
 
         <div className="flex-1 max-w-xl mx-auto w-full lg:max-w-none">
           <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-8 h-full min-h-[600px]">
-            <div className="flex items-center gap-3 mb-8">
-              <Users className="w-8 h-8 text-purple-400" />
-              <h2 className="text-3xl font-bold tracking-tight">Lobby ({lobbyId})</h2>
+            <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center gap-3">
+                <Users className="w-8 h-8 text-purple-400" />
+                <h2 className="text-3xl font-bold tracking-tight">Lobby ({lobbyId})</h2>
+              </div>
+              <button onClick={handleLeaveLobby} className="flex items-center gap-2 bg-red-500/10 text-red-500 hover:bg-red-500/20 px-4 py-2 rounded-xl transition-all font-bold group">
+                <LogOut className="w-5 h-5 group-hover:-translate-x-1 transition-transform" /> <span className="hidden sm:inline">Close</span>
+              </button>
             </div>
             
             <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
