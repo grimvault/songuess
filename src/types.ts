@@ -16,6 +16,9 @@ export interface Lobby {
     gameMode: GameMode;
     rounds: number;
     category: string;
+    numOptions: number;
+    answerStyle: 'mcq' | 'typing';
+    autoAdvance?: string;
   };
   currentRound: number;
   currentAnswers: string[]; // Options Array (4 usually)
