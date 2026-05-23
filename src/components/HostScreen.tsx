@@ -115,7 +115,7 @@ export function HostScreen() {
         // Calculate points based on speed (max 1000)
         // 30 seconds max
         const guessTimeDiff = (p.lastGuessTime - lobby.roundStartTime) / 1000;
-        const speedRatio = Math.max(0, 1 - (guessTimeDiff / 30));
+        const speedRatio = Math.max(0, Math.min(1, 1 - (guessTimeDiff / 30)));
         pointsEarned = Math.round(500 + (500 * speedRatio));
       }
       

@@ -76,7 +76,7 @@ export function PlayerScreen() {
       {/* Header */}
       <header className="bg-zinc-900 border-b border-zinc-800 p-4 flex items-center justify-between sticky top-0 z-10">
         <div className="flex items-center gap-3">
-          <img src={player.avatar} alt="Avatar" className="w-12 h-12 rounded-full border-2 border-zinc-700" />
+          <img src={player.avatar} alt="Avatar" className="w-12 h-12 rounded-xl border-2 border-zinc-700 p-0.5" />
           <div>
             <div className="font-bold text-lg leading-tight">{player.name}</div>
             <div className="text-zinc-400 text-sm font-mono">{player.score} pts</div>

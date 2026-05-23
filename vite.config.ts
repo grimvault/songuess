@@ -5,7 +5,7 @@ import {defineConfig} from 'vite';
 
 export default defineConfig(({ command }) => {
   return {
-    base: command === 'build' ? '/songuess/' : '/',
+    base: command === 'build' ? '/songuess/' : './',
     plugins: [react(), tailwindcss()],
     resolve: {
       alias: {
