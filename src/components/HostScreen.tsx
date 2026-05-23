@@ -270,13 +270,13 @@ export function HostScreen() {
         <div className="flex-1 max-w-xl mx-auto w-full lg:max-w-none">
           <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-8 h-full min-h-[600px]">
             <div className="flex items-center justify-between mb-8">
-              <div className="flex items-center gap-3">
-                <Users className="w-8 h-8 text-purple-400" />
-                <h2 className="text-3xl font-bold tracking-tight">Lobby ({lobbyId})</h2>
-              </div>
               <button onClick={handleLeaveLobby} className="flex items-center gap-2 bg-red-500/10 text-red-500 hover:bg-red-500/20 px-4 py-2 rounded-xl transition-all font-bold group">
-                <LogOut className="w-5 h-5 group-hover:-translate-x-1 transition-transform" /> <span className="hidden sm:inline">Close</span>
+                <LogOut className="w-5 h-5 group-hover:-translate-x-1 transition-transform rotate-180" /> <span className="hidden sm:inline">Close</span>
               </button>
+              <div className="flex items-center gap-3">
+                <h2 className="text-3xl font-bold tracking-tight">Lobby ({lobbyId})</h2>
+                <Users className="w-8 h-8 text-purple-400" />
+              </div>
             </div>
             
             <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
