@@ -29,7 +29,7 @@ export default function App() {
       console.error(e);
       setAuthError(e.message || 'Failed to authenticate');
     });
-  }, [role]);
+  }, []);
 
   if (authError) {
     return (
