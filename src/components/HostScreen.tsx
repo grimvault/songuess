@@ -69,12 +69,10 @@ export function HostScreen() {
   }, [lobby?.status, lobby?.roundStartTime]);
 
   const handleLeaveLobby = async () => {
-    if (window.confirm("Are you sure you want to close this lobby? All players will be kicked.")) {
-      if (lobbyId) {
-        await deleteDoc(doc(db, 'lobbies', lobbyId));
-      }
-      reset();
+    if (lobbyId) {
+      await deleteDoc(doc(db, 'lobbies', lobbyId));
     }
+    reset();
   };
 
   const startGame = async () => {

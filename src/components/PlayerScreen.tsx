@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useGameStore } from '../stores/useGameStore';
-import { doc, onSnapshot, updateDoc } from 'firebase/firestore';
+import { doc, onSnapshot, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { Lobby, Player } from '../types';
 import { LogOut, Check, X, Clock } from 'lucide-react';
@@ -42,7 +42,14 @@ export function PlayerScreen() {
     });
   };
 
-  const handleLeave = () => {
+  const handleLeave = async () => {
+    if (lobbyId && playerId) {
+      try {
+        await deleteDoc(doc(db, 'lobbies', lobbyId, 'players', playerId));
+      } catch (e) {
+        console.error(e);
+      }
+    }
     reset();
   };
 
