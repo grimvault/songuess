@@ -50,6 +50,7 @@ export function PlayerScreen() {
         console.error(e);
       }
     }
+    window.history.replaceState({}, '', window.location.pathname);
     reset();
   };
 

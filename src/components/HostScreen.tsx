@@ -72,6 +72,7 @@ export function HostScreen() {
     if (lobbyId) {
       await deleteDoc(doc(db, 'lobbies', lobbyId));
     }
+    window.history.replaceState({}, '', window.location.pathname);
     reset();
   };
 
