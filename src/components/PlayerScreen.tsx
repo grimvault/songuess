@@ -9,17 +9,12 @@ export function PlayerScreen() {
   const { lobbyId, playerId, reset } = useGameStore();
   const [lobby, setLobby] = useState<Lobby | null>(null);
   const [player, setPlayer] = useState<Player | null>(null);
-  const [typingGuess, setTypingGuess] = useState('');
 
   useEffect(() => {
     if (!lobbyId || !playerId) return;
     const unsubLobby = onSnapshot(doc(db, 'lobbies', lobbyId), (docSnap) => {
       if (docSnap.exists()) {
-        const data = docSnap.data() as Lobby;
-        setLobby(data);
-        if (data.status === 'playing' && player && !player.hasGuessed) {
-          // Reset local typing state on new round
-        }
+        setLobby(docSnap.data() as Lobby);
       } else {
         reset();
       }
@@ -27,11 +22,7 @@ export function PlayerScreen() {
 
     const unsubPlayer = onSnapshot(doc(db, 'lobbies', lobbyId, 'players', playerId), (docSnap) => {
       if (docSnap.exists()) {
-        const data = docSnap.data() as Player;
-        setPlayer(data);
-        if (!data.hasGuessed) {
-          setTypingGuess('');
-        }
+        setPlayer(docSnap.data() as Player);
       }
     });
 
@@ -76,7 +67,7 @@ export function PlayerScreen() {
       {/* Header */}
       <header className="bg-zinc-900 border-b border-zinc-800 p-4 flex items-center justify-between sticky top-0 z-10">
         <div className="flex items-center gap-3">
-          <img src={player.avatar} alt="Avatar" className="w-12 h-12 rounded-xl border-2 border-zinc-700 p-0.5" />
+          <img src={player.avatar} alt="Avatar" className="w-12 h-12 rounded-full border-2 border-zinc-700" />
           <div>
             <div className="font-bold text-lg leading-tight">{player.name}</div>
             <div className="text-zinc-400 text-sm font-mono">{player.score} pts</div>
@@ -115,26 +106,6 @@ export function PlayerScreen() {
                 </div>
                 <h3 className="text-2xl font-bold">Guess sent!</h3>
                 <p className="text-zinc-400">Waiting for others...</p>
-              </div>
-            ) : lobby.settings.inputMode === 'typing' ? (
-              <div className="flex-1 flex flex-col justify-center gap-6">
-                <form onSubmit={(e) => { e.preventDefault(); handleGuess(typingGuess); }} className="space-y-6">
-                  <input
-                    type="text"
-                    value={typingGuess}
-                    onChange={e => setTypingGuess(e.target.value)}
-                    placeholder={lobby.settings.gameMode === 'author' ? 'Type artist name...' : 'Type song name...'}
-                    className="w-full bg-zinc-900 border-2 border-zinc-800 rounded-2xl py-6 px-6 text-2xl font-semibold text-center text-white focus:outline-none focus:border-purple-500 shadow-xl"
-                    autoFocus
-                  />
-                  <button
-                    type="submit"
-                    disabled={!typingGuess.trim()}
-                    className="w-full bg-purple-600 hover:bg-purple-500 disabled:opacity-50 disabled:bg-zinc-800 text-white font-bold text-xl py-6 rounded-2xl transition-all shadow-xl"
-                  >
-                    Submit Guess
-                  </button>
-                </form>
               </div>
             ) : (
               <div className="flex-1 flex flex-col gap-4">
