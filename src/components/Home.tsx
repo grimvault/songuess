@@ -1,7 +1,7 @@
 import { useState, FormEvent } from 'react';
 import { useGameStore } from '../stores/useGameStore';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
-import { db, auth } from '../firebase';
+import { db, auth, signIn } from '../firebase';
 import { generateLobbyId, generateAvatarUrl } from '../lib/utils';
 import { Music, ArrowRight, Plus } from 'lucide-react';
 
@@ -14,10 +14,15 @@ export function Home() {
   const [error, setError] = useState('');
 
   const handleCreateGame = async () => {
-    if (!auth.currentUser) return;
     setLoading(true);
-    const newLobbyId = generateLobbyId();
+    setError('');
     try {
+      if (!auth.currentUser) {
+        await signIn();
+      }
+      if (!auth.currentUser) throw new Error("Could not authenticate");
+      
+      const newLobbyId = generateLobbyId();
       await setDoc(doc(db, 'lobbies', newLobbyId), {
         hostId: auth.currentUser.uid,
         status: 'waiting',
@@ -30,7 +35,7 @@ export function Home() {
       });
       setLobbyId(newLobbyId);
       setRole('host');
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
       setError('Failed to create game. Please try again.');
     } finally {
@@ -40,12 +45,18 @@ export function Home() {
 
   const handleJoinGame = async (e: FormEvent) => {
     e.preventDefault();
-    if (!auth.currentUser || !joinCode || !playerName) return;
-    
     setLoading(true);
     setError('');
     
     try {
+      if (!auth.currentUser) {
+        await signIn();
+      }
+      if (!auth.currentUser || !joinCode || !playerName) {
+        setLoading(false);
+        return;
+      }
+      
       const lobbyCode = joinCode.toUpperCase().trim();
       const lobbySnap = await getDoc(doc(db, 'lobbies', lobbyCode));
       
