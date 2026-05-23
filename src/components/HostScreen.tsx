@@ -15,6 +15,31 @@ import {
   SelectValue,
 } from "./ui/Select";
 
+function SmoothImage({ src, alt, className }: { src: string; alt: string; className: string }) {
+  const [loaded, setLoaded] = useState(false);
+  
+  // Reset loaded state when src changes (so next round images fade in gracefully)
+  useEffect(() => {
+    setLoaded(false);
+  }, [src]);
+
+  return (
+    <div className={`relative overflow-hidden ${className}`}>
+      {!loaded && (
+        <div className="absolute inset-0 bg-zinc-900 animate-pulse flex items-center justify-center">
+          <Music className="w-12 h-12 text-zinc-700" />
+        </div>
+      )}
+      <img
+        src={src}
+        alt={alt}
+        onLoad={() => setLoaded(true)}
+        className={`w-full h-full object-cover transition-opacity duration-500 ${loaded ? 'opacity-100' : 'opacity-0'}`}
+      />
+    </div>
+  );
+}
+
 export function HostScreen() {
   const { lobbyId, reset } = useGameStore();
   const [lobby, setLobby] = useState<Lobby | null>(null);
@@ -24,10 +49,12 @@ export function HostScreen() {
   const [rounds, setRounds] = useState(5);
   const [numOptions, setNumOptions] = useState(4);
   const [answerStyle, setAnswerStyle] = useState<any>('mcq');
+  const [autoAdvance, setAutoAdvance] = useState<string>('manual'); // 'manual', 'instant', '5s', '10s'
   const [loadingAudio, setLoadingAudio] = useState(false);
   
-  // Timer state
+  // Timer states
   const [timeLeft, setTimeLeft] = useState(0);
+  const [autoAdvanceTimeLeft, setAutoAdvanceTimeLeft] = useState<number | null>(null);
 
   useEffect(() => {
     if (!lobbyId) return;
@@ -100,6 +127,40 @@ export function HostScreen() {
     }
   }, [lobby?.status, lobby?.roundStartTime]);
 
+  // Auto Advance Logic after round ends
+  useEffect(() => {
+    if (lobby?.status === 'roundFinished' && lobby.settings.autoAdvance && lobby.settings.autoAdvance !== 'manual' && !loadingAudio) {
+      const option = lobby.settings.autoAdvance;
+      let duration = 0;
+      if (option === 'instant') {
+        nextRound();
+        return;
+      } else if (option === '5s') {
+        duration = 5;
+      } else if (option === '10s') {
+        duration = 10;
+      }
+
+      setAutoAdvanceTimeLeft(duration);
+      const startTime = Date.now();
+
+      const interval = setInterval(() => {
+        const elapsed = (Date.now() - startTime) / 1000;
+        const remaining = Math.max(0, duration - elapsed);
+        setAutoAdvanceTimeLeft(remaining);
+
+        if (remaining <= 0) {
+          clearInterval(interval);
+          nextRound();
+        }
+      }, 100);
+
+      return () => clearInterval(interval);
+    } else {
+      setAutoAdvanceTimeLeft(null);
+    }
+  }, [lobby?.status, lobby?.currentRound, lobby?.settings?.autoAdvance, loadingAudio]);
+
   const handleLeaveLobby = async () => {
     if (lobbyId) {
       await deleteDoc(doc(db, 'lobbies', lobbyId));
@@ -117,7 +178,8 @@ export function HostScreen() {
         rounds,
         category: categories,
         numOptions,
-        answerStyle
+        answerStyle,
+        autoAdvance
       },
       currentRound: 0
     });
@@ -330,6 +392,26 @@ export function HostScreen() {
                   </button>
                 </div>
               </div>
+
+              <div className="space-y-3 md:col-span-2">
+                <label className="text-sm font-medium text-zinc-400">Auto Next Round</label>
+                <div className="flex gap-2 flex-wrap sm:flex-nowrap">
+                  {[
+                    { value: 'manual', label: 'Manual' },
+                    { value: 'instant', label: 'Instantly' },
+                    { value: '5s', label: '5 Seconds' },
+                    { value: '10s', label: '10 Seconds' },
+                  ].map(opt => (
+                    <button 
+                      key={opt.value}
+                      onClick={() => setAutoAdvance(opt.value)}
+                      className={`flex-1 py-3 px-2 rounded-xl border text-sm font-medium ${autoAdvance === opt.value ? 'bg-purple-500 border-purple-500 text-white' : 'bg-zinc-950 border-zinc-800 text-zinc-400 hover:border-zinc-600'}`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
 
             <button
@@ -402,7 +484,7 @@ export function HostScreen() {
           )}
 
           {lobby.settings.gameMode === 'coverImage' ? (
-            <img src={lobby.currentTrackCover} alt="Cover" className="w-[400px] h-[400px] rounded-3xl shadow-2xl object-cover transition-opacity duration-700" />
+            <SmoothImage src={lobby.currentTrackCover} alt="Cover" className="w-[400px] h-[400px] rounded-3xl shadow-2xl" />
           ) : (
             <div className="w-[400px] h-[400px] rounded-full bg-purple-500/20 border-4 border-purple-500/30 flex items-center justify-center animate-pulse">
               <Music className="w-32 h-32 text-purple-400" />
@@ -417,7 +499,7 @@ export function HostScreen() {
             ) : (
               lobby.currentAnswers.map((ans, i) => (
                 <div key={i} className="bg-zinc-900 border-2 border-zinc-800 text-2xl font-semibold py-8 px-6 rounded-3xl text-center shadow-lg flex items-center justify-center">
-                  ??
+                  {ans}
                 </div>
               ))
             )}
@@ -455,7 +537,7 @@ export function HostScreen() {
           </h2>
           
           <div className="flex items-center justify-center gap-8 mt-12 mb-16 transition-all duration-700">
-            <img src={lobby.currentTrackCover} alt="Cover" className="w-64 h-64 rounded-3xl shadow-2xl object-cover" />
+            <SmoothImage src={lobby.currentTrackCover} alt="Cover" className="w-64 h-64 rounded-3xl shadow-2xl" />
             <div className="text-left space-y-2 max-w-xl">
               <p className="text-2xl text-zinc-400 uppercase tracking-widest font-semibold">The correct answer was</p>
               <h3 className="text-5xl font-bold text-green-400 leading-tight">
@@ -494,9 +576,15 @@ export function HostScreen() {
             <button 
               onClick={nextRound}
               disabled={loadingAudio}
-              className="bg-white text-black font-bold text-2xl px-12 py-5 rounded-2xl shadow-xl hover:bg-zinc-200 transition-colors disabled:opacity-50"
+              className="bg-white text-black font-bold text-2xl px-12 py-5 rounded-2xl shadow-xl hover:bg-zinc-200 transition-colors disabled:opacity-50 min-w-[200px]"
             >
-              {loadingAudio ? 'Loading...' : 'Next Round'}
+              {loadingAudio ? (
+                'Loading...'
+              ) : autoAdvanceTimeLeft !== null && autoAdvanceTimeLeft > 0 ? (
+                `Next Round (${Math.ceil(autoAdvanceTimeLeft)}s)`
+              ) : (
+                'Next Round'
+              )}
             </button>
           ) : (
             <button 
