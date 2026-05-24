@@ -27,10 +27,18 @@ export function Home() {
         hostId: auth.currentUser.uid,
         status: 'waiting',
         currentRound: 0,
+        currentAnswers: [],
+        correctAnswer: '',
+        currentTrackPreview: '',
+        currentTrackCover: '',
+        roundStartTime: 0,
         settings: {
           gameMode: 'songName',
           rounds: 5,
-          category: 'pop' // Default category
+          category: 'all',
+          numOptions: 4,
+          answerStyle: 'mcq',
+          autoAdvance: 'manual'
         }
       });
       setLobbyId(newLobbyId);
