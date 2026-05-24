@@ -6,7 +6,7 @@ import { Lobby, Player } from '../types';
 import QRCode from 'react-qr-code';
 import { 
   Users, Settings, Play, Check, X, SkipForward, Music, LogOut,
-  Image, User, Disc, Calendar
+  Image, User, Disc, Calendar, Tag
 } from 'lucide-react';
 import { searchItunes } from '../lib/itunes';
 import confetti from 'canvas-confetti';
@@ -280,6 +280,7 @@ export function HostScreen() {
         if (settings.gameMode === 'author') return t.artist || "Unknown Artist";
         if (settings.gameMode === 'album') return t.album || "Unknown Album";
         if (settings.gameMode === 'releaseYear') return t.year || "Unknown Year";
+        if (settings.gameMode === 'genre') return t.genre || "Unknown Genre";
         return t.name;
       };
 
@@ -364,6 +365,7 @@ export function HostScreen() {
     { value: 'author', label: 'Guess Artist', icon: User, desc: 'Guess the performing artist.' },
     { value: 'album', label: 'Guess Album', icon: Disc, desc: 'Listen and guess the album.' },
     { value: 'releaseYear', label: 'Guess Year', icon: Calendar, desc: 'Listen and guess the year.' },
+    { value: 'genre', label: 'Guess Genre', icon: Tag, desc: 'Listen and guess the genre.' },
   ];
 
   if (lobby.status === 'waiting' || lobby.status === 'starting') {
@@ -371,7 +373,7 @@ export function HostScreen() {
       <div className="h-screen bg-zinc-950 text-white p-6 md:p-8 font-sans flex flex-col lg:flex-row gap-6 lg:gap-8 relative overflow-hidden">
         
         {/* Left Section - Settings Container */}
-        <div className="flex-1 flex flex-col h-full overflow-hidden space-y-4 max-w-2xl mx-auto lg:mx-0 w-full">
+        <div className="flex-1 flex flex-col h-full overflow-hidden space-y-4 w-full">
           <div>
             <h1 className="text-4xl font-bold tracking-tighter text-white">Join the Party!</h1>
           </div>
@@ -397,17 +399,9 @@ export function HostScreen() {
                         className={`relative flex flex-col items-center justify-center p-3.5 rounded-2xl border text-center transition-all cursor-pointer overflow-hidden ${
                           isSelected 
                             ? 'bg-zinc-100 border-zinc-100 text-black font-bold' 
-                            : 'bg-zinc-950/60 border-zinc-800 text-zinc-400 hover:border-zinc-700 hover:text-zinc-200'
+                            : 'bg-zinc-950/60 border-zinc-800 text-zinc-400 hover:bg-zinc-900 hover:border-zinc-700 hover:text-zinc-200'
                         }`}
                       >
-                        {isSelected && (
-                          <motion.div
-                            layoutId="mode-highlight"
-                            className="absolute inset-0 bg-zinc-100"
-                            initial={false}
-                            transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                          />
-                        )}
                         <IconComp className={`w-5.5 h-5.5 mb-2 relative z-10 ${isSelected ? 'text-black' : 'text-zinc-500'}`} />
                         <span className="text-xs relative z-10">{opt.label}</span>
                         <span className={`text-[10px] mt-1 line-clamp-2 leading-tight font-normal relative z-10 ${isSelected ? 'text-zinc-600' : 'text-zinc-500'}`}>{opt.desc}</span>
@@ -546,7 +540,7 @@ export function HostScreen() {
         </div>
 
           {/* Right Section - Players list & QR Code Area */}
-        <div className="flex-1 flex flex-col h-full overflow-hidden space-y-4 max-w-2xl mx-auto lg:mx-0 w-full">
+        <div className="flex-1 flex flex-col h-full overflow-hidden space-y-4 w-full">
           
           <div className="bg-zinc-900 border border-zinc-800 p-5 rounded-3xl flex flex-row items-center justify-around gap-6">
             <div className="bg-white p-2.5 rounded-xl shrink-0">

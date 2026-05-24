@@ -43,12 +43,12 @@ export const SelectContent = React.forwardRef<
       position={position}
       {...props}
     >
-      <SelectPrimitive.ScrollUpButton className="flex cursor-default items-center justify-center py-1 text-zinc-400">
+      <SelectPrimitive.ScrollUpButton className="hidden cursor-default items-center justify-center py-1 text-zinc-400">
         <ChevronUp className="h-4 w-4" />
       </SelectPrimitive.ScrollUpButton>
       <SelectPrimitive.Viewport
         className={
-          "p-2 max-h-48 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] " +
+          "p-2 max-h-[40vh] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] " +
           (position === "popper"
             ? "w-full min-w-[var(--radix-select-trigger-width)]"
             : "")
@@ -56,7 +56,7 @@ export const SelectContent = React.forwardRef<
       >
         {children}
       </SelectPrimitive.Viewport>
-      <SelectPrimitive.ScrollDownButton className="flex cursor-default items-center justify-center py-1 text-zinc-400">
+      <SelectPrimitive.ScrollDownButton className="hidden cursor-default items-center justify-center py-1 text-zinc-400">
         <ChevronDown className="h-4 w-4" />
       </SelectPrimitive.ScrollDownButton>
     </SelectPrimitive.Content>

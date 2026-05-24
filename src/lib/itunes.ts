@@ -23,6 +23,7 @@ export async function searchItunes(term: string) {
         artist: t.artistName,
         album: t.collectionName || "",
         year: t.releaseDate ? new Date(t.releaseDate).getFullYear().toString() : "",
+        genre: t.primaryGenreName || "Unknown Genre",
         previewUrl: t.previewUrl,
         artworkUrl: t.artworkUrl100?.replace('100x100bb', '600x600bb'), // get high-res image
       }));
