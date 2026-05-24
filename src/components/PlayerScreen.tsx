@@ -112,11 +112,11 @@ export function PlayerScreen() {
             
             {player.hasGuessed ? (
               <div className="flex-1 flex flex-col items-center justify-center text-center space-y-4">
-                <div className="w-20 h-20 bg-green-500/10 border border-green-500/20 text-green-400 rounded-[2rem] flex items-center justify-center mb-4">
+                <div className="w-20 h-20 bg-white text-black rounded-[2rem] flex items-center justify-center mb-4">
                   <Check className="w-10 h-10" />
                 </div>
                 <h3 className="text-2xl font-bold">Guess sent!</h3>
-                <p className="text-zinc-400">Waiting for others...</p>
+                <p className="text-zinc-500">Waiting for others...</p>
               </div>
             ) : lobby.settings.answerStyle === 'typing' ? (
               <div className="flex-1 flex flex-col justify-center max-w-sm mx-auto w-full">
@@ -127,13 +127,13 @@ export function PlayerScreen() {
                     value={typedAnswer}
                     onChange={(e) => setTypedAnswer(e.target.value)}
                     placeholder="E.g. Shape of You..."
-                    className="w-full bg-zinc-900 border border-zinc-700 rounded-2xl px-6 py-5 text-xl font-bold focus:outline-none focus:ring-4 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all text-center"
+                    className="w-full bg-zinc-900 border border-zinc-700 rounded-2xl px-6 py-5 text-xl font-bold focus:outline-none focus:ring-2 focus:ring-white focus:border-white transition-all text-center"
                     autoFocus
                   />
                   <button 
                     type="submit" 
                     disabled={!typedAnswer.trim()}
-                    className="w-full bg-purple-600 text-white font-bold text-xl rounded-2xl py-5 disabled:opacity-50 hover:bg-purple-700 transition-colors shadow-[0_0_20px_rgba(168,85,247,0.3)] active:scale-[0.98]"
+                    className="w-full bg-white text-black font-bold text-xl rounded-2xl py-5 disabled:opacity-50 hover:bg-zinc-200 transition-colors active:scale-[0.98]"
                   >
                     Send Guess
                   </button>
@@ -145,7 +145,7 @@ export function PlayerScreen() {
                   <button
                     key={i}
                     onClick={() => handleGuess(ans)}
-                    className="flex-1 bg-zinc-900 border border-zinc-800 rounded-3xl p-6 text-xl font-bold text-center transition-all hover:bg-zinc-800 focus:ring-4 focus:ring-purple-500/20 active:scale-[0.98] focus:outline-none flex items-center justify-center shadow-lg"
+                    className="flex-1 bg-zinc-900 border border-zinc-800 rounded-3xl p-6 text-xl font-bold text-center transition-all hover:bg-white hover:text-black focus:ring-4 focus:ring-white/20 active:scale-[0.98] focus:outline-none flex items-center justify-center"
                   >
                     {ans}
                   </button>
@@ -163,19 +163,19 @@ export function PlayerScreen() {
             
             {player.lastPointsEarned > 0 ? (
               <>
-                <div className="w-32 h-32 bg-green-500 rounded-[3rem] flex items-center justify-center shadow-[0_0_60px_rgba(34,197,94,0.4)] transition-all duration-500 scale-110">
-                  <Check className="w-16 h-16 text-white" />
+                <div className="w-32 h-32 bg-white rounded-[3rem] flex items-center justify-center transition-all duration-500 scale-110">
+                  <Check className="w-16 h-16 text-black" />
                 </div>
-                <h2 className="text-4xl font-bold text-green-400">Correct!</h2>
-                <div className="text-2xl font-mono text-white">+{player.lastPointsEarned} pts</div>
+                <h2 className="text-4xl font-bold text-white">Correct!</h2>
+                <div className="text-2xl font-mono text-zinc-400">+{player.lastPointsEarned} pts</div>
               </>
             ) : (
               <>
-                <div className="w-32 h-32 bg-red-500 rounded-[3rem] flex items-center justify-center shadow-[0_0_60px_rgba(239,68,68,0.4)] transition-all duration-500 scale-110">
-                  <X className="w-16 h-16 text-white" />
+                <div className="w-32 h-32 bg-zinc-800 rounded-[3rem] flex items-center justify-center transition-all duration-500 scale-110">
+                  <X className="w-16 h-16 text-zinc-500" />
                 </div>
-                <h2 className="text-4xl font-bold text-red-400">Incorrect</h2>
-                <div className="text-xl text-zinc-400">Better luck next time</div>
+                <h2 className="text-4xl font-bold text-zinc-500">Incorrect</h2>
+                <div className="text-xl text-zinc-600">Better luck next time</div>
               </>
             )}
             

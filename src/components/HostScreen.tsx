@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useGameStore } from '../stores/useGameStore';
 import { doc, onSnapshot, updateDoc, collection, deleteDoc } from 'firebase/firestore';
 import { db } from '../firebase';
@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { searchItunes } from '../lib/itunes';
 import confetti from 'canvas-confetti';
+import { motion } from 'motion/react';
 import {
   Select,
   SelectContent,
@@ -199,8 +200,11 @@ export function HostScreen() {
     nextRound(activeSettings);
   };
 
+  const isFinishingRef = useRef(false);
+
   const finishRound = async () => {
-    if (!lobbyId || !lobby) return;
+    if (!lobbyId || !lobby || isFinishingRef.current || lobby.status !== 'playing') return;
+    isFinishingRef.current = true;
     
     // Calculate points for everyone who guessed
     const updates: any[] = [];
@@ -252,6 +256,8 @@ export function HostScreen() {
     await updateDoc(doc(db, 'lobbies', lobbyId), {
       status: isGameOver ? 'gameFinished' : 'roundFinished',
     });
+    
+    isFinishingRef.current = false;
   };
 
   const nextRound = async (overrideSettings?: any) => {
@@ -371,8 +377,8 @@ export function HostScreen() {
           </div>
           
           <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 flex-1 overflow-y-auto space-y-6 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-            <div className="flex items-center gap-3 border-b border-zinc-800/50 pb-4">
-              <Settings className="w-5 h-5 text-purple-400" />
+            <div className="flex items-center gap-3 border-b border-zinc-800 pb-4">
+              <Settings className="w-5 h-5 text-white" />
               <h2 className="text-xl font-bold">Game Settings</h2>
             </div>
             
@@ -388,15 +394,23 @@ export function HostScreen() {
                       <button
                         key={opt.value}
                         onClick={() => setGameMode(opt.value)}
-                        className={`flex flex-col items-center justify-center p-3.5 rounded-2xl border text-center transition-all cursor-pointer ${
+                        className={`relative flex flex-col items-center justify-center p-3.5 rounded-2xl border text-center transition-all cursor-pointer overflow-hidden ${
                           isSelected 
-                            ? 'bg-purple-600/10 border-purple-500 text-white shadow-[0_0_15px_rgba(168,85,247,0.15)] font-bold' 
-                            : 'bg-zinc-950/60 border-zinc-800/80 text-zinc-400 hover:border-zinc-700/80 hover:text-zinc-200'
+                            ? 'bg-zinc-100 border-zinc-100 text-black font-bold' 
+                            : 'bg-zinc-950/60 border-zinc-800 text-zinc-400 hover:border-zinc-700 hover:text-zinc-200'
                         }`}
                       >
-                        <IconComp className={`w-5.5 h-5.5 mb-2 ${isSelected ? 'text-purple-400' : 'text-zinc-500'}`} />
-                        <span className="text-xs">{opt.label}</span>
-                        <span className="text-[10px] text-zinc-500 mt-1 line-clamp-2 leading-tight font-normal">{opt.desc}</span>
+                        {isSelected && (
+                          <motion.div
+                            layoutId="mode-highlight"
+                            className="absolute inset-0 bg-zinc-100"
+                            initial={false}
+                            transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                          />
+                        )}
+                        <IconComp className={`w-5.5 h-5.5 mb-2 relative z-10 ${isSelected ? 'text-black' : 'text-zinc-500'}`} />
+                        <span className="text-xs relative z-10">{opt.label}</span>
+                        <span className={`text-[10px] mt-1 line-clamp-2 leading-tight font-normal relative z-10 ${isSelected ? 'text-zinc-600' : 'text-zinc-500'}`}>{opt.desc}</span>
                       </button>
                     );
                   })}
@@ -440,30 +454,36 @@ export function HostScreen() {
                 {/* Total Rounds */}
                 <div className="space-y-3">
                   <label className="text-sm font-semibold text-zinc-300">Total Rounds</label>
-                  <div className="flex gap-1.5 bg-zinc-950/60 p-1 rounded-2xl border border-zinc-800/80">
+                  <div className="flex gap-1.5 bg-zinc-950 p-1 rounded-2xl border border-zinc-800">
                     {[5, 10, 15, 20].map(r => (
                       <button 
                         key={r}
                         onClick={() => setRounds(r)}
-                        className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all ${rounds === r ? 'bg-purple-600 text-white shadow' : 'text-zinc-400 hover:text-zinc-200'}`}
+                        className={`relative flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all ${rounds === r ? 'text-black' : 'text-zinc-500 hover:text-zinc-300'}`}
                       >
-                        {r}
+                        {rounds === r && (
+                          <motion.div layoutId="rounds-bg" className="absolute inset-0 bg-white rounded-xl" transition={{ type: "spring", bounce: 0.2, duration: 0.6 }} />
+                        )}
+                        <span className="relative z-10">{r}</span>
                       </button>
                     ))}
                   </div>
                 </div>
 
                 {/* Number of Options */}
-                <div className="space-y-3">
+                <div className={`space-y-3 transition-opacity duration-300 ${answerStyle === 'typing' ? 'opacity-30 pointer-events-none' : 'opacity-100'}`}>
                   <label className="text-sm font-semibold text-zinc-300">Option Choices</label>
-                  <div className="flex gap-1.5 bg-zinc-950/60 p-1 rounded-2xl border border-zinc-800/80">
+                  <div className="flex gap-1.5 bg-zinc-950 p-1 rounded-2xl border border-zinc-800">
                     {[2, 4, 6, 8].map(r => (
                       <button 
                         key={r}
                         onClick={() => setNumOptions(r)}
-                        className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all ${numOptions === r ? 'bg-purple-600 text-white shadow' : 'text-zinc-400 hover:text-zinc-200'}`}
+                        className={`relative flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all ${numOptions === r ? 'text-black' : 'text-zinc-500 hover:text-zinc-300'}`}
                       >
-                        {r}
+                        {numOptions === r && (
+                          <motion.div layoutId="options-bg" className="absolute inset-0 bg-white rounded-xl" transition={{ type: "spring", bounce: 0.2, duration: 0.6 }} />
+                        )}
+                        <span className="relative z-10">{r}</span>
                       </button>
                     ))}
                   </div>
@@ -473,18 +493,20 @@ export function HostScreen() {
               {/* Answer Style */}
               <div className="space-y-3">
                 <label className="text-sm font-semibold text-zinc-300">Join Answer Style</label>
-                <div className="flex gap-2 bg-zinc-950/60 p-1 rounded-2xl border border-zinc-800/80">
+                <div className="flex gap-2 bg-zinc-950 p-1 rounded-2xl border border-zinc-800">
                   <button 
                     onClick={() => setAnswerStyle('mcq')}
-                    className={`flex-1 py-3 rounded-xl text-sm font-semibold transition-all ${answerStyle === 'mcq' ? 'bg-purple-600 text-white shadow' : 'text-zinc-400 hover:text-zinc-200'}`}
+                    className={`relative flex-1 py-3 rounded-xl text-sm font-semibold transition-all ${answerStyle === 'mcq' ? 'text-black' : 'text-zinc-500 hover:text-zinc-300'}`}
                   >
-                    Multiple Choice (MCQ)
+                    {answerStyle === 'mcq' && <motion.div layoutId="style-bg" className="absolute inset-0 bg-white rounded-xl" transition={{ type: "spring", bounce: 0.2, duration: 0.6 }} />}
+                    <span className="relative z-10">Multiple Choice (MCQ)</span>
                   </button>
                   <button 
                     onClick={() => setAnswerStyle('typing')}
-                    className={`flex-1 py-3 rounded-xl text-sm font-semibold transition-all ${answerStyle === 'typing' ? 'bg-purple-600 text-white shadow' : 'text-zinc-400 hover:text-zinc-200'}`}
+                    className={`relative flex-1 py-3 rounded-xl text-sm font-semibold transition-all ${answerStyle === 'typing' ? 'text-black' : 'text-zinc-500 hover:text-zinc-300'}`}
                   >
-                    Typing (Free Input)
+                    {answerStyle === 'typing' && <motion.div layoutId="style-bg" className="absolute inset-0 bg-white rounded-xl" transition={{ type: "spring", bounce: 0.2, duration: 0.6 }} />}
+                    <span className="relative z-10">Typing (Free Input)</span>
                   </button>
                 </div>
               </div>
@@ -492,7 +514,7 @@ export function HostScreen() {
               {/* Auto Next Round */}
               <div className="space-y-3">
                 <label className="text-sm font-semibold text-zinc-300">Auto Next Round</label>
-                <div className="flex gap-1.5 bg-zinc-950/60 p-1 rounded-2xl border border-zinc-800/80">
+                <div className="flex gap-1.5 bg-zinc-950 p-1 rounded-2xl border border-zinc-800">
                   {[
                     { value: 'manual', label: 'Manual' },
                     { value: 'instant', label: 'Instantly' },
@@ -502,9 +524,10 @@ export function HostScreen() {
                     <button 
                       key={opt.value}
                       onClick={() => setAutoAdvance(opt.value)}
-                      className={`flex-1 py-2.5 rounded-xl text-xs font-semibold transition-all ${autoAdvance === opt.value ? 'bg-purple-600 text-white shadow' : 'text-zinc-400 hover:text-zinc-200'}`}
+                      className={`relative flex-1 py-2.5 rounded-xl text-xs font-semibold transition-all ${autoAdvance === opt.value ? 'text-black' : 'text-zinc-500 hover:text-zinc-300'}`}
                     >
-                      {opt.label}
+                      {autoAdvance === opt.value && <motion.div layoutId="auto-bg" className="absolute inset-0 bg-white rounded-xl" transition={{ type: "spring", bounce: 0.2, duration: 0.6 }} />}
+                      <span className="relative z-10">{opt.label}</span>
                     </button>
                   ))}
                 </div>
@@ -522,45 +545,44 @@ export function HostScreen() {
           </div>
         </div>
 
-        {/* Right Section - Players list & QR Code Area */}
+          {/* Right Section - Players list & QR Code Area */}
         <div className="flex-1 flex flex-col h-full overflow-hidden space-y-4 max-w-2xl mx-auto lg:mx-0 w-full">
           
-          {/* QR Code and Lobby Code block - Moved Above Lobby Players Block */}
-          <div className="bg-zinc-900 border border-zinc-800 p-5 rounded-3xl flex flex-row items-center justify-around gap-6 shadow-xl">
+          <div className="bg-zinc-900 border border-zinc-800 p-5 rounded-3xl flex flex-row items-center justify-around gap-6">
             <div className="bg-white p-2.5 rounded-xl shrink-0">
               <QRCode value={joinUrl} size={110} bgColor="#ffffff" fgColor="#09090b" style={{ borderRadius: '4px' }} />
             </div>
             <div className="flex flex-col items-start gap-1">
-              <span className="text-xs font-bold uppercase tracking-wider text-purple-400">Lobby Code</span>
-              <div className="font-mono text-zinc-100 bg-zinc-950 px-5 py-2.5 rounded-xl border border-zinc-800 tracking-[0.2em] text-2xl font-black shadow-inner">
+              <span className="text-xs font-bold uppercase tracking-wider text-zinc-400">Lobby Code</span>
+              <div className="font-mono text-white bg-zinc-950 px-6 py-3 rounded-xl border border-zinc-800 tracking-[0.2em] text-2xl font-black">
                 {lobbyId}
               </div>
-              <span className="text-xs text-zinc-400 font-medium mt-1">Scan or type to join game</span>
             </div>
           </div>
 
-          {/* Lobby Players list block - Fixed height, scrollable */}
           <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 flex-1 flex flex-col overflow-hidden">
-            <div className="flex items-center justify-between mb-4 pb-3 border-b border-zinc-800/50">
-              <button onClick={handleLeaveLobby} className="flex items-center gap-1.5 bg-red-500/10 text-red-500 hover:bg-red-500/20 px-3 py-1.5 rounded-xl transition-all font-bold group text-xs">
+            <div className="flex items-center justify-between mb-4 pb-3 border-b border-zinc-800">
+              <button onClick={handleLeaveLobby} className="flex items-center gap-1.5 bg-zinc-800 text-zinc-300 hover:bg-zinc-700 hover:text-white px-3 py-1.5 rounded-xl transition-all font-bold group text-xs">
                 <LogOut className="w-3.5 h-3.5 group-hover:-translate-x-1 transition-transform rotate-180" /> <span>Close</span>
               </button>
               <div className="flex items-center gap-2">
                 <h2 className="text-lg font-bold tracking-tight">Players ({players.length})</h2>
-                <Users className="w-5 h-5 text-purple-400" />
+                <Users className="w-5 h-5 text-white" />
               </div>
             </div>
             
-            {/* Scrollable list of players */}
             <div className="flex-1 overflow-y-auto pr-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
               {players.length === 0 && (
-                <div className="text-center text-zinc-500 py-20 font-medium">
+                <div className="text-center text-zinc-500 py-20 font-medium flex flex-col items-center gap-3">
+                  <div className="w-16 h-16 rounded-full border-2 border-zinc-700 border-dashed flex items-center justify-center animate-[spin_10s_linear_infinite]">
+                    <Users className="w-6 h-6 text-zinc-600 animate-[spin_10s_linear_infinite_reverse]" />
+                  </div>
                   Waiting for players to join...
                 </div>
               )}
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 {players.map(p => (
-                  <div key={(p as any).id} className="bg-zinc-950 rounded-2xl p-3 flex flex-col items-center gap-2.5 border border-zinc-800/60 shadow">
+                  <div key={(p as any).id} className="bg-zinc-950 rounded-2xl p-3 flex flex-col items-center gap-2.5 border border-zinc-800/60">
                     <img src={p.avatar} alt={p.name} className="w-14 h-14 rounded-xl bg-zinc-900" />
                     <span className="font-semibold text-xs truncate w-full text-center text-zinc-200">{p.name}</span>
                   </div>
@@ -600,21 +622,21 @@ export function HostScreen() {
           )}
 
           {lobby.settings.gameMode === 'coverImage' ? (
-            <SmoothImage src={lobby.currentTrackCover} alt="Cover" className="w-[320px] h-[320px] rounded-3xl shadow-2xl" />
+            <SmoothImage src={lobby.currentTrackCover} alt="Cover" className="w-[320px] h-[320px] rounded-3xl" />
           ) : (
-            <div className="w-[320px] h-[320px] rounded-full bg-purple-500/15 border-4 border-purple-500/30 flex items-center justify-center animate-pulse">
-              <Music className="w-24 h-24 text-purple-400" />
+            <div className="w-[320px] h-[320px] rounded-full bg-zinc-900 border-4 border-zinc-800 flex items-center justify-center animate-pulse">
+              <Music className="w-24 h-24 text-zinc-700" />
             </div>
           )}
           
           <div className={`grid ${lobby.settings.numOptions > 4 ? 'grid-cols-2 md:grid-cols-4' : 'grid-cols-2'} gap-4 max-w-5xl w-full`}>
             {lobby.settings.answerStyle === 'typing' ? (
-              <div className="col-span-full bg-zinc-900 border-2 border-zinc-800 text-3xl font-semibold py-12 px-6 rounded-3xl text-center shadow-lg text-zinc-500">
+              <div className="col-span-full bg-zinc-900 border border-zinc-800 text-3xl font-semibold py-12 px-6 rounded-3xl text-center text-zinc-500">
                 Players are typing...
               </div>
             ) : (
               lobby.currentAnswers.map((ans, i) => (
-                <div key={i} className="bg-zinc-900 border-2 border-zinc-800 text-xl font-bold py-7 px-5 rounded-2xl text-center shadow-lg flex items-center justify-center leading-tight">
+                <div key={i} className="bg-zinc-900 border border-zinc-800 text-xl font-bold py-7 px-5 rounded-2xl text-center flex items-center justify-center leading-tight">
                   {ans}
                 </div>
               ))
@@ -623,7 +645,7 @@ export function HostScreen() {
 
           <div className="flex flex-wrap justify-center gap-3 mt-8">
              {players.map(p => (
-                <div key={(p as any).id} className={`w-14 h-14 rounded-xl border-4 transition-all ${p.hasGuessed ? 'border-green-500 opacity-100 scale-105' : 'border-zinc-800 opacity-40'}`}>
+                <div key={(p as any).id} className={`w-14 h-14 rounded-xl border-4 transition-all ${p.hasGuessed ? 'border-white opacity-100 scale-105' : 'border-zinc-800 opacity-40'}`}>
                   <img src={p.avatar} alt={p.name} className="rounded-lg w-full h-full object-cover bg-zinc-900" />
                 </div>
              ))}
@@ -652,10 +674,10 @@ export function HostScreen() {
           </h2>
           
           <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mt-10 mb-10">
-            <SmoothImage src={lobby.currentTrackCover} alt="Cover" className="w-48 h-48 rounded-2xl shadow-2xl shrink-0" />
+            <SmoothImage src={lobby.currentTrackCover} alt="Cover" className="w-48 h-48 rounded-2xl shrink-0" />
             <div className="text-center sm:text-left space-y-2">
               <p className="text-xs text-zinc-400 uppercase tracking-widest font-semibold">The correct answer was</p>
-              <h3 className="text-3xl md:text-4xl font-black text-green-400 leading-tight">
+              <h3 className="text-3xl md:text-4xl font-black text-white leading-tight">
                 {lobby.correctAnswer}
               </h3>
             </div>
@@ -664,22 +686,22 @@ export function HostScreen() {
 
         <div className="w-full max-w-3xl space-y-3">
           {sorted.map((p, i) => (
-            <div key={(p as any).id} className="bg-zinc-900 border border-zinc-800 rounded-2xl flex items-center p-3.5 px-5 gap-5 shadow-xl">
-              <div className="text-3xl font-extrabold text-zinc-700 w-8">{i + 1}</div>
+            <div key={(p as any).id} className="bg-zinc-900 border border-zinc-800 rounded-2xl flex items-center p-3.5 px-5 gap-5">
+              <div className="text-3xl font-extrabold text-white w-8">{i + 1}</div>
               <img src={p.avatar} alt={p.name} className="w-14 h-14 rounded-xl bg-zinc-950 shrink-0" />
               <div className="flex-1 min-w-0">
                 <div className="text-lg font-bold truncate">{p.name}</div>
                 {p.lastPointsEarned > 0 ? (
-                  <div className="text-green-400 text-sm font-semibold flex items-center gap-1">
+                  <div className="text-zinc-400 text-sm font-semibold flex items-center gap-1">
                     <Check className="w-4 h-4" /> +{p.lastPointsEarned} pts
                   </div>
                 ) : (
-                  <div className="text-red-400 text-sm font-semibold flex items-center gap-1">
+                  <div className="text-zinc-500 text-sm font-semibold flex items-center gap-1">
                     <X className="w-4 h-4" /> 0 pts
                   </div>
                 )}
               </div>
-              <div className="text-3xl font-black font-mono tracking-tighter text-purple-400">
+              <div className="text-3xl font-black font-mono tracking-tighter text-white">
                 {p.score}
               </div>
             </div>
@@ -691,7 +713,7 @@ export function HostScreen() {
             <button 
               onClick={() => nextRound()}
               disabled={loadingAudio}
-              className="bg-white text-black font-extrabold text-xl px-12 py-4.5 rounded-2xl shadow-xl hover:bg-zinc-200 transition-colors disabled:opacity-50 min-w-[220px] cursor-pointer"
+              className="bg-white text-black font-extrabold text-xl px-12 py-4.5 rounded-2xl hover:bg-zinc-200 transition-colors disabled:opacity-50 min-w-[220px] cursor-pointer"
             >
               {loadingAudio ? (
                 'Loading...'
@@ -704,7 +726,7 @@ export function HostScreen() {
           ) : (
             <button 
               onClick={handlePlayAgain}
-              className="bg-purple-600 text-white font-extrabold text-xl px-12 py-4.5 rounded-2xl shadow-xl hover:bg-purple-700 transition-colors cursor-pointer"
+              className="bg-white text-black font-extrabold text-xl px-12 py-4.5 rounded-2xl hover:bg-zinc-200 transition-colors cursor-pointer"
             >
               Play Again
             </button>

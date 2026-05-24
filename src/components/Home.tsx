@@ -103,9 +103,8 @@ export function Home() {
       
       <div className="max-w-md w-full space-y-12">
         <div className="text-center space-y-4">
-          <div className="inline-flex p-5 mx-auto bg-purple-500/10 rounded-3xl mb-2 relative group">
-            <div className="absolute inset-0 bg-purple-500/20 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-            <Music className="w-12 h-12 text-purple-400 relative" />
+          <div className="inline-flex p-5 mx-auto bg-zinc-900 rounded-3xl mb-2 relative">
+            <Music className="w-12 h-12 text-white relative" />
           </div>
           <h1 className="text-6xl font-bold tracking-tighter text-white">Songuess</h1>
           <p className="text-zinc-400 text-lg font-medium">The multiplayer music guessing party game.</p>
@@ -118,7 +117,7 @@ export function Home() {
         )}
 
         <div className="space-y-6">
-          <form onSubmit={handleJoinGame} className="bg-zinc-900/50 backdrop-blur-xl border border-zinc-800 rounded-[2rem] p-8 space-y-6 shadow-2xl">
+          <form onSubmit={handleJoinGame} className="bg-zinc-900 border border-zinc-800 rounded-[2rem] p-8 space-y-6">
             <h2 className="text-2xl font-bold tracking-tight">Join a Game</h2>
             <div className="space-y-4">
               <input
@@ -126,7 +125,7 @@ export function Home() {
                 placeholder="Lobby Code (e.g. ABCD1234)"
                 value={joinCode}
                 onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
-                className="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-5 py-4 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 uppercase placeholder:normal-case font-mono text-lg transition-all"
+                className="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-5 py-4 focus:outline-none focus:ring-2 focus:ring-white focus:border-white uppercase placeholder:normal-case font-mono text-lg transition-all"
                 maxLength={8}
                 required
               />
@@ -135,7 +134,7 @@ export function Home() {
                 placeholder="Your Nickname"
                 value={playerName}
                 onChange={(e) => setPlayerName(e.target.value)}
-                className="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-5 py-4 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 text-lg transition-all"
+                className="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-5 py-4 focus:outline-none focus:ring-2 focus:ring-white focus:border-white text-lg transition-all"
                 maxLength={16}
                 required
               />
@@ -143,7 +142,7 @@ export function Home() {
             <button
               type="submit"
               disabled={loading || !joinCode || !playerName}
-              className="w-full bg-white text-zinc-950 hover:bg-zinc-200 disabled:opacity-50 disabled:cursor-not-allowed font-bold text-lg rounded-2xl px-4 py-4 flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-[0_0_40px_rgba(255,255,255,0.1)]"
+              className="w-full bg-white text-black hover:bg-zinc-200 disabled:opacity-50 disabled:cursor-not-allowed font-bold text-lg rounded-2xl px-4 py-4 flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
             >
               Ready to Play <ArrowRight className="w-5 h-5" />
             </button>
@@ -161,7 +160,7 @@ export function Home() {
           <button
             onClick={handleCreateGame}
             disabled={loading}
-            className="w-full bg-zinc-900/50 hover:bg-zinc-800 text-white border border-zinc-800 rounded-2xl px-4 py-4 flex items-center justify-center gap-2 transition-all active:scale-[0.98] text-lg font-bold backdrop-blur-xl"
+            className="w-full bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 hover:border-zinc-700 text-white rounded-2xl px-4 py-4 flex items-center justify-center gap-2 transition-all active:scale-[0.98] text-lg font-bold"
           >
             <Plus className="w-6 h-6" /> Create New Game
           </button>
